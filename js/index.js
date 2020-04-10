@@ -28,6 +28,10 @@ require([
     //
     //--------------------------------------------------------------------------
 
+    // Get date
+    var today = new Date();
+    var _today = "'" + today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+
     var labelClass = {
         // autocasts as new LabelClass()
         symbol: {
@@ -94,7 +98,8 @@ require([
 
     var slider = new Slider({
         container: "slider",
-        max: 1586131200000,
+        max: today.getTime(),
+        // max: 1586131200000,
         min: 1582502400000,
         values: [1582502400000],
         step: 2678400000,
@@ -105,14 +110,6 @@ require([
         },
         labelsVisible: true
     });
-
-    // slider.inputFormatFunction = function (value, type) {
-    //     debugger
-    // }
-
-    // slider.inputParseFunction = function (value, type) {
-    //     debugger
-    // }
 
     slider.labelFormatFunction = function (value, type) {
         // return new Date(value).toLocaleDateString()
