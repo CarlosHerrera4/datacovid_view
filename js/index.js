@@ -49,7 +49,7 @@ require([
         portalItem: {
             id: "2900a255ae0f47779bf9b2036e9d0d87"
         },
-        definitionExpression: "date >= DATE '2020-2-24' AND date <= DATE '2020-2-25'",
+        definitionExpression: "date >= DATE '2020-3-20' AND date <= DATE '2020-3-21'",
         title: "Cifras afectados. COVID-19  (casos por 100.000 habitantes)",
         outFields: ["*"],
         labelingInfo: [labelClass]
@@ -86,6 +86,7 @@ require([
     //--------------------------------------------------------------------------
 
     var applicationDiv = document.getElementById("applicationDiv");
+    var sliderDay = document.getElementById("sliderDay");
     var sliderValue = document.getElementById("sliderValue");
     var playButton = document.getElementById("playButton");
     var titleDiv = document.getElementById("titleDiv");
@@ -98,7 +99,7 @@ require([
         values: [1582502400000],
         step: 2678400000,
         rangeLabelsVisible: true,
-        visibleElements:{
+        visibleElements: {
             labels: true,
             rangeLabels: true
         },
@@ -114,8 +115,8 @@ require([
     // }
 
     slider.labelFormatFunction = function (value, type) {
-        return new Date(value).toLocaleDateString()
-        // return (type === "value") ? value.toFixed(0) : value;
+        // return new Date(value).toLocaleDateString()
+        return new Date(value).getDate() + " de " + getMonth(value) 
     }
 
     // When user drags the slider:
@@ -171,6 +172,8 @@ require([
 
     // When the layerview is available, setup hovering interactivity
     view.whenLayerView(layer).then(setupHoverTooltip);
+    // Set to 20 March
+    setYear(1584658800000)
 
     //--------------------------------------------------------------------------
     //
@@ -183,7 +186,9 @@ require([
      */
     function setYear(value) {
         // sliderValue.innerHTML = Math.floor(value);
-        sliderValue.innerHTML = new Date(value).toLocaleDateString()
+        var day = getDay(value);
+        sliderDay.innerHTML = day;
+        sliderValue.innerHTML = new Date(value).getDate() + " de " + getMonth(value) + " " + new Date(value).getFullYear()
         slider.viewModel.setValue(0, value);
 
         // Formateamos fecha
@@ -393,5 +398,73 @@ require([
                 visible = false;
             }
         };
+    }
+
+    function getDay(value) {
+        switch (new Date(value).getDay()) {
+            case 0:
+                day = "Domingo";
+                break;
+            case 1:
+                day = "Lunes";
+                break;
+            case 2:
+                day = "Martes";
+                break;
+            case 3:
+                day = "Miércoles";
+                break;
+            case 4:
+                day = "Jueves";
+                break;
+            case 5:
+                day = "Viernes";
+                break;
+            case 6:
+                day = "Sábado";
+        }
+        return day;
+    }
+
+    function getMonth(value) {
+        switch (new Date(value).getMonth()) {
+            case 0:
+                month = "Enero";
+                break;
+            case 1:
+                month = "Febrero";
+                break;
+            case 2:
+                month = "Marzo";
+                break;
+            case 3:
+                month = "Abril";
+                break;
+            case 4:
+                month = "Mayo";
+                break;
+            case 5:
+                month = "Junio";
+                break;
+            case 6:
+                month = "Julio";
+                break;
+            case 7:
+                month = "Agosto";
+                break;
+            case 8:
+                month = "Septiembre";
+                break;
+            case 9:
+                month = "Octubre";
+                break;
+            case 10:
+                month = "Noviembre";
+                break;
+            case 11:
+                month = "Diciembre";
+                break;
+        }
+        return month;
     }
 });
