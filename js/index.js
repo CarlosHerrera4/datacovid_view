@@ -8,7 +8,8 @@ require([
     "esri/widgets/Legend",
     "esri/widgets/Home",
     "esri/widgets/Slider",
-    "esri/widgets/Fullscreen"
+    "esri/widgets/Fullscreen",
+    "esri/widgets/Expand",
 ], function (
     Map,
     LabelClass,
@@ -18,7 +19,8 @@ require([
     Legend,
     Home,
     Slider,
-    Fullscreen
+    Fullscreen,
+    Expand
 ) {
     //--------------------------------------------------------------------------
     //
@@ -48,7 +50,7 @@ require([
             id: "2900a255ae0f47779bf9b2036e9d0d87"
         },
         definitionExpression: "date >= DATE '2020-2-24' AND date <= DATE '2020-2-25'",
-        title: "Cifras afectados. COVID-19",
+        title: "Cifras afectados. COVID-19  (casos por 100.000 habitantes)",
         outFields: ["*"],
         labelingInfo: [labelClass]
     });
@@ -66,7 +68,7 @@ require([
         map: map,
         container: "viewDiv",
         center: [-4, 40.727724],
-        zoom: 6,
+        zoom: 5,
         constraints: {
             snapToZoom: false
         },
@@ -95,7 +97,12 @@ require([
         min: 1582502400000,
         values: [1582502400000],
         step: 2678400000,
-        rangeLabelsVisible: true
+        rangeLabelsVisible: true,
+        visibleElements:{
+            labels: true,
+            rangeLabels: true
+        },
+        labelsVisible: true
     });
 
     // slider.inputFormatFunction = function (value, type) {
@@ -140,18 +147,27 @@ require([
         "top-left"
     );
     view.ui.add(
-        new Legend({
-            view: view
-        }),
-        "bottom-left"
-    );
-    view.ui.add(
         new Fullscreen({
             view: view,
             element: applicationDiv
         }),
         "top-right"
     );
+
+
+    view.ui.add(
+        new Expand({
+            content: new Legend({
+                view: view,
+                style: "card"
+            }),
+            view: view,
+            expanded: true
+        }),
+        "bottom-left"
+    );
+
+
 
     // When the layerview is available, setup hovering interactivity
     view.whenLayerView(layer).then(setupHoverTooltip);
@@ -174,7 +190,7 @@ require([
         var _date = new Date(value).getFullYear() + "-" + (new Date(value).getMonth() + 1) + "-" + new Date(value).getDate();
         var _date_ = new Date(value + 86400000).getFullYear() + "-" + (new Date(value + 86400000).getMonth() + 1) + "-" + new Date(value + 86400000).getDate()
 
-        layer.definitionExpression = "date >= DATE '" + _date + "' AND date <= DATE '" + _date_ + "'";
+        layer.definitionExpression = "date >= DATE '" + _date + "' AND date < DATE '" + _date_ + "'";
 
 
     }
@@ -224,16 +240,18 @@ require([
                         tooltip.show(
                             screenPoint,
                             // "Built in " + graphic.getAttribute("CNSTRCT_YR")
-                            "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
+                            // "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
 
-                            "<b>" + graphic.getAttribute("province") + "</b><br><br>" +
+                            "<b>" + graphic.getAttribute("province") + ".  " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "</b><br>" +
 
-                            "Nuevos casos: " + graphic.getAttribute("new_cases") + "<br>" +
-                            "Recuperados: " + graphic.getAttribute("recovered") + "<br>" +
-                            "Hospitalizados: " + graphic.getAttribute("hospitalized") + "<br>" +
-                            "Casos en UCI: " + graphic.getAttribute("intensive_care") + "<br>" +
-                            "Casos por 100.000 hab: " + graphic.getAttribute("") + "<br>" +
-                            "Casos acumulados: " + graphic.getAttribute("cases_accumulated")
+                            "<ul>" +
+                            "<li>Nuevos casos: <b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></li>" +
+                            "<li>Recuperados: <b>" + isNegative(graphic.getAttribute("recovered")) + "</b></li>" +
+                            "<li>Hospitalizados: <b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></li>" +
+                            "<li>Casos en UCI: <b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></li>" +
+                            "<li>Casos por 100.000 hab: <b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></li>" +
+                            "<li>Casos acumulados: <b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></li>" +
+                            "</ul>"
 
                         );
                     } else {
@@ -243,6 +261,18 @@ require([
                 function () { }
             );
         });
+    }
+
+    /**
+     */
+
+    function isNegative(value) {
+        if (value == -1) {
+            return "-"
+        }
+        else {
+            return value
+        }
     }
 
     /**
@@ -291,7 +321,7 @@ require([
             // Update at 30fps
             setTimeout(function () {
                 requestAnimationFrame(frame);
-            }, 1000 / 30);
+            }, 700);
         };
 
         frame();
