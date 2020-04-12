@@ -1,6 +1,8 @@
 
 require([
+    "dojo/_base/lang",
     "esri/Map",
+    "esri/request",
     "esri/layers/support/LabelClass",
     "esri/layers/FeatureLayer",
     "esri/views/MapView",
@@ -11,7 +13,9 @@ require([
     "esri/widgets/Fullscreen",
     "esri/widgets/Expand",
 ], function (
+    lang,
     Map,
+    esriRequest,
     LabelClass,
     FeatureLayer,
     MapView,
@@ -113,7 +117,7 @@ require([
 
     slider.labelFormatFunction = function (value, type) {
         // return new Date(value).toLocaleDateString()
-        return new Date(value).getDate() + " de " + getMonth(value) 
+        return new Date(value).getDate() + " de " + getMonth(value)
     }
 
     // When user drags the slider:
@@ -157,7 +161,9 @@ require([
         new Expand({
             content: new Legend({
                 view: view,
-                style: "card"
+                style: {
+                    type: "classic"
+                },
             }),
             view: view,
             expanded: true
@@ -169,8 +175,19 @@ require([
 
     // When the layerview is available, setup hovering interactivity
     view.whenLayerView(layer).then(setupHoverTooltip);
+
     // Set to 20 March
-    setYear(1584658800000)
+    setYear(1584658800000);
+
+    view.popup = {
+        dockEnabled: true,
+        dockOptions: {
+            buttonEnabled: false,
+            position: "bottom-right",
+            breakpoint: false
+        }
+    }
+    view.popup.viewModel.actions = [];
 
     //--------------------------------------------------------------------------
     //
@@ -235,29 +252,56 @@ require([
                     // highlight the hovered feature
                     // or hide the tooltip
                     if (hit) {
+                        // Query for chart
+                        // var query = {
+                        //     outFields: ["*"],
+                        //     returnGeometry: false,
+                        //     spatialRelationship: "intersects",
+                        //     where: "ine_code = " + hit.graphic.attributes.ine_code
+                        // };
+                        // layerview.layer.queryFeatures(query).then(lang.hitch(this, function (result) {
+                        //     debugger
+                        // }))
+
                         var graphic = hit.graphic;
                         var screenPoint = hit.screenPoint;
 
                         highlight = layerview.highlight(graphic);
-                        tooltip.show(
-                            screenPoint,
-                            // "Built in " + graphic.getAttribute("CNSTRCT_YR")
-                            // "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
 
-                            "<b>" + graphic.getAttribute("province") + ".  " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "</b><br>" +
+                        // tooltip.show(
+                        //     screenPoint,
+                        //     // "Built in " + graphic.getAttribute("CNSTRCT_YR")
+                        //     // "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
 
-                            "<ul>" +
-                            "<li>Nuevos casos: <b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></li>" +
-                            "<li>Recuperados: <b>" + isNegative(graphic.getAttribute("recovered")) + "</b></li>" +
-                            "<li>Hospitalizados: <b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></li>" +
-                            "<li>Casos en UCI: <b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></li>" +
-                            "<li>Casos por 100.000 hab: <b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></li>" +
-                            "<li>Casos acumulados: <b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></li>" +
-                            "</ul>"
+                        //     "<b>" + graphic.getAttribute("province") + ".  " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "</b><br>" +
 
-                        );
+                        //     "<ul>" +
+                        //     "<li>Nuevos casos: <b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></li>" +
+                        //     "<li>Recuperados: <b>" + isNegative(graphic.getAttribute("recovered")) + "</b></li>" +
+                        //     "<li>Hospitalizados: <b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></li>" +
+                        //     "<li>Casos en UCI: <b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></li>" +
+                        //     "<li>Casos por 100.000 hab: <b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></li>" +
+                        //     "<li>Casos acumulados: <b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></li>" +
+                        //     "</ul>"
+
+                        // );
+                        view.popup.open({
+                            title: graphic.getAttribute("province"),
+                            position: "bottom-right",
+                            content: "<ul>" +
+                                "<li>Nuevos casos: <b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></li>" +
+                                "<li>Recuperados: <b>" + isNegative(graphic.getAttribute("recovered")) + "</b></li>" +
+                                "<li>Hospitalizados: <b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></li>" +
+                                "<li>Casos en UCI: <b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></li>" +
+                                "<li>Casos por 100.000 hab: <b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></li>" +
+                                "<li>Casos acumulados: <b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></li>" +
+                                "</ul>"
+                        })
+                        // }))
+
                     } else {
                         tooltip.hide();
+                        view.popup.close()
                     }
                 },
                 function () { }
