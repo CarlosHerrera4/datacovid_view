@@ -1,6 +1,7 @@
 
 require([
     "dojo/_base/lang",
+    'dojo/_base/array',
     "esri/Map",
     "esri/request",
     "esri/layers/support/LabelClass",
@@ -14,6 +15,7 @@ require([
     "esri/widgets/Expand",
 ], function (
     lang,
+    array,
     Map,
     esriRequest,
     LabelClass,
@@ -31,6 +33,8 @@ require([
     //  Setup Map and View
     //
     //--------------------------------------------------------------------------
+
+    var chart;
 
     // Get date
     var today = new Date();
@@ -60,7 +64,8 @@ require([
         definitionExpression: "date >= DATE '2020-3-20' AND date <= DATE '2020-3-21'",
         title: "Cifras afectados. COVID-19  (casos por 100.000 habitantes)",
         outFields: ["*"],
-        labelingInfo: [labelClass]
+        labelingInfo: [labelClass],
+        popupEnabled: false
     });
 
     var map = new Map({
@@ -171,10 +176,213 @@ require([
         "bottom-left"
     );
 
+    // view.ui.add([charts], "bottom-right");
+    var historicData = new Expand({
+        content: charts
+    });
+    view.ui.add( historicData, "bottom-right");
+
+
 
 
     // When the layerview is available, setup hovering interactivity
-    view.whenLayerView(layer).then(setupHoverTooltip);
+    // view.whenLayerView(layer).then(setupHoverTooltip);
+    view.whenLayerView(layer).then(lang.hitch(this, function (layerview) {
+        var query = {
+            outFields: ["*"],
+            returnGeometry: false,
+            spatialRelationship: "intersects",
+            where: "1=1"
+        };
+        layerview.layer.queryFeatures(query).then(lang.hitch(this, function (result) {
+            this.result = result;
+        }));
+
+        function setupHoverTooltip(layerview) {
+            var highlight;
+
+            var tooltip = createTooltip();
+
+            var hitTest = promiseUtils.debounce(function (event) {
+                return view.hitTest(event).then(function (hit) {
+                    var results = hit.results.filter(function (result) {
+                        return result.graphic.layer === layer;
+                    });
+
+                    if (!results.length) {
+                        return null;
+                    }
+
+                    return {
+                        graphic: results[0].graphic,
+                        screenPoint: hit.screenPoint
+                    };
+                });
+            });
+
+            view.on("pointer-move", function (event) {
+                return hitTest(event).then(
+                    function (hit) {
+                        // remove current highlighted feature
+                        if (highlight) {
+                            highlight.remove();
+                            highlight = null;
+                        }
+
+                        // highlight the hovered feature
+                        // or hide the tooltip
+                        if (hit) {
+                            // Query for chart
+                            // var query = {
+                            //     outFields: ["*"],
+                            //     returnGeometry: false,
+                            //     spatialRelationship: "intersects",
+                            //     where: "ine_code = " + hit.graphic.attributes.ine_code
+                            // };
+                            // layerview.layer.queryFeatures(query).then(lang.hitch(this, function (result) {
+                            //     debugger
+                            // }))
+
+                            var graphic = hit.graphic;
+                            var screenPoint = hit.screenPoint;
+
+                            highlight = layerview.highlight(graphic);
+
+                            tooltip.show(
+                                screenPoint,
+                                //     // "Built in " + graphic.getAttribute("CNSTRCT_YR")
+                                //     // "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
+
+                                "<b>" + graphic.getAttribute("province") + ".  " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "</b><br><br>" +
+                                "<table>" +
+                                "<tr>" +
+                                "<td>Nuevos casos: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Recuperados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("recovered")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Hospitalizados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Casos en UCI: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Casos por 100.000 hab: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Casos acumulados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></td>" +
+                                "</tr>" +
+                                "</table>" +
+                                "<br><br><i>Clic para ver histórico</i>"
+                            );
+
+                        } else {
+                            tooltip.hide();
+                            // view.popup.close()
+                        }
+                    },
+                    function () { }
+                );
+            });
+
+            view.on("click", function (event) {
+                if (chart != undefined) {
+                    chart.data.datasets[0].data = [];
+                    chart.data.datasets[1].data = [];
+                    chart.update();
+                }
+                return hitTest(event).then(
+                    function (hit) {
+                        if (hit) {
+                            historicData.expand();
+
+                            var graphic = hit.graphic;
+
+                            var _arrayFilter = array.filter(this.result.features, function (item) {
+                                return (item.attributes.province == graphic.attributes.province && item.attributes.date <= graphic.attributes.date)
+                            });
+                            var arrayFilter = _arrayFilter.sort(function (a, b) {
+                                return a.attributes.date - b.attributes.date
+                            })
+
+                            var arrayCasesAccumulated = [];
+                            var arrayNewCases = [];
+                            var arrayDates = [];
+                            for (i = 0; i < arrayFilter.length; i++) {
+                                arrayCasesAccumulated.push(arrayFilter[i].attributes.cases_accumulated)
+                                arrayNewCases.push(arrayFilter[i].attributes.new_cases)
+                                arrayDates.push(new Date(arrayFilter[i].attributes.date).toLocaleDateString())
+                            }
+
+                            var config = {
+                                type: 'line',
+                                data: {
+                                    labels: arrayDates,
+                                    datasets: [{
+                                        label: 'Casos acumulados',
+                                        fill: false,
+                                        backgroundColor: "blue",
+                                        borderColor: "blue",
+                                        data: arrayCasesAccumulated
+                                    },
+                                    {
+                                        label: 'Nuevos casos',
+                                        backgroundColor: "red",
+                                        borderColor: "red",
+                                        data: arrayNewCases,
+                                        fill: true,
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    title: {
+                                        display: true,
+                                        text: graphic.getAttribute('province')
+                                    },
+                                    tooltips: {
+                                        mode: 'index',
+                                        intersect: false,
+                                    },
+                                    hover: {
+                                        mode: 'nearest',
+                                        intersect: true
+                                    },
+                                    scales: {
+                                        xAxes: [{
+                                            display: true,
+                                            scaleLabel: {
+                                                display: false,
+                                                labelString: 'Mes'
+                                            }
+                                        }],
+                                        yAxes: [{
+                                            display: true,
+                                            scaleLabel: {
+                                                display: true,
+                                                labelString: 'Casos'
+                                            }
+                                        }]
+                                    }
+                                }
+                            };
+
+                            chart = new Chart(document.getElementById('resultCanvas').getContext("2d"), config)
+
+                        }
+                    }
+                )
+            })
+        }
+        setupHoverTooltip(layerview)
+    }));
+
 
     // Set to 20 March
     setYear(1584658800000);
@@ -215,109 +423,14 @@ require([
     }
 
     /**
-     * Sets up a moving tooltip that displays
-     * the construction year of the hovered building.
-     */
-    function setupHoverTooltip(layerview) {
-        var highlight;
-
-        var tooltip = createTooltip();
-
-        var hitTest = promiseUtils.debounce(function (event) {
-            return view.hitTest(event).then(function (hit) {
-                var results = hit.results.filter(function (result) {
-                    return result.graphic.layer === layer;
-                });
-
-                if (!results.length) {
-                    return null;
-                }
-
-                return {
-                    graphic: results[0].graphic,
-                    screenPoint: hit.screenPoint
-                };
-            });
-        });
-
-        view.on("pointer-move", function (event) {
-            return hitTest(event).then(
-                function (hit) {
-                    // remove current highlighted feature
-                    if (highlight) {
-                        highlight.remove();
-                        highlight = null;
-                    }
-
-                    // highlight the hovered feature
-                    // or hide the tooltip
-                    if (hit) {
-                        // Query for chart
-                        // var query = {
-                        //     outFields: ["*"],
-                        //     returnGeometry: false,
-                        //     spatialRelationship: "intersects",
-                        //     where: "ine_code = " + hit.graphic.attributes.ine_code
-                        // };
-                        // layerview.layer.queryFeatures(query).then(lang.hitch(this, function (result) {
-                        //     debugger
-                        // }))
-
-                        var graphic = hit.graphic;
-                        var screenPoint = hit.screenPoint;
-
-                        highlight = layerview.highlight(graphic);
-
-                        // tooltip.show(
-                        //     screenPoint,
-                        //     // "Built in " + graphic.getAttribute("CNSTRCT_YR")
-                        //     // "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
-
-                        //     "<b>" + graphic.getAttribute("province") + ".  " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "</b><br>" +
-
-                        //     "<ul>" +
-                        //     "<li>Nuevos casos: <b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></li>" +
-                        //     "<li>Recuperados: <b>" + isNegative(graphic.getAttribute("recovered")) + "</b></li>" +
-                        //     "<li>Hospitalizados: <b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></li>" +
-                        //     "<li>Casos en UCI: <b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></li>" +
-                        //     "<li>Casos por 100.000 hab: <b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></li>" +
-                        //     "<li>Casos acumulados: <b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></li>" +
-                        //     "</ul>"
-
-                        // );
-                        view.popup.open({
-                            title: graphic.getAttribute("province"),
-                            position: "bottom-right",
-                            content: "<ul>" +
-                                "<li>Nuevos casos: <b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></li>" +
-                                "<li>Recuperados: <b>" + isNegative(graphic.getAttribute("recovered")) + "</b></li>" +
-                                "<li>Hospitalizados: <b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></li>" +
-                                "<li>Casos en UCI: <b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></li>" +
-                                "<li>Casos por 100.000 hab: <b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></li>" +
-                                "<li>Casos acumulados: <b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></li>" +
-                                "</ul>"
-                        })
-                        // }))
-
-                    } else {
-                        tooltip.hide();
-                        view.popup.close()
-                    }
-                },
-                function () { }
-            );
-        });
-    }
-
-    /**
      */
 
     function isNegative(value) {
         if (value == -1) {
-            return "-"
+            return "No hay datos disponibles"
         }
         else {
-            return value
+            return new Intl.NumberFormat('de-DE').format(value)
         }
     }
 
