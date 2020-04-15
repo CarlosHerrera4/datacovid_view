@@ -42,6 +42,10 @@ require([
     var today = new Date();
     var _today = "'" + today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
 
+    var yesterday = new Date();
+    var _yesterday = "'" + yesterday.getFullYear() + "-" + (yesterday.getMonth() + 1) + "-" + yesterday.getDate();
+
+
     var labelClass = {
         // autocasts as new LabelClass()
         symbol: {
@@ -154,9 +158,7 @@ require([
             // id: "2900a255ae0f47779bf9b2036e9d0d87"
             id: "9ec5c536afd643459e5bf40c71124a03"
         },
-        // url: "https://services7.arcgis.com/lTrEzFGSU2ayogtj/ArcGIS/rest/services/COMPLETA_Afectados_por_coronavirus_por_provincia_en_Espa%C3%B1a_Vista_Solo_lectura/FeatureServer/0",
-        // url: "https://services7.arcgis.com/lTrEzFGSU2ayogtj/arcgis/rest/services/[COMPLETA]_Afectados_por_coronavirus_por_provincia_en_Espa%C3%B1a_historico/FeatureServer/0",
-        // definitionExpression: "Fecha >= DATE '2020-3-20' AND Fecha <= DATE '2020-3-21'",
+        definitionExpression: "Fecha >= DATE " + _yesterday + " AND Fecha <= DATE " + _today + "",
         title: "Cifras afectados COVID-19 por provincia",
         outFields: ["*"],
         visible: true,
@@ -173,14 +175,6 @@ require([
         },
         layers: [layer]
     });
-
-
-    // var map = new WebMap({
-    //     portalItem: {
-    //         id: "02ef9624f4ee403d8f4c723fcf8c1bbf"
-    //     }
-    //     // layers: [layer]
-    // });
 
     var view = new MapView({
         map: map,
@@ -213,8 +207,6 @@ require([
     var slider = new Slider({
         container: "slider",
         max: today.getTime(),
-        // max: 1586131200000,
-        // min: 1582502400000,
         min: 1585519200000,  // 30  marzo
         values: [1585519200000],
         step: 2678400000,
@@ -302,8 +294,6 @@ require([
 
 
         layerview.layer.queryFeatures(query).then(lang.hitch(this, function (result) {
-        // layerview.queryFeatures(query).then(lang.hitch(this, function (result) {
-
             this.result = result;
         }));
 
@@ -316,7 +306,6 @@ require([
                 return view.hitTest(event).then(function (hit) {
                     var results = hit.results.filter(function (result) {
                         return result.graphic.layer === layer;
-                        // return result.graphic.layer === layerview;
 
                     });
 
@@ -361,8 +350,6 @@ require([
 
                             tooltip.show(
                                 screenPoint,
-                                //     // "Built in " + graphic.getAttribute("CNSTRCT_YR")
-                                //     // "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
 
                                 "<b>" + graphic.getAttribute("Texto") + "  (" + graphic.getAttribute("NombreCCAA") + ")  " + new Date(graphic.getAttribute("Fecha")).toLocaleDateString() + "</b><br><br>" +
                                 "<table>" +
@@ -401,6 +388,7 @@ require([
             });
 
             view.on("click", function (event) {
+                // Refresh data of 3 variables
                 if (chart != undefined) {
                     chart.data.datasets[0].data = [];
                     chart.data.datasets[1].data = [];
@@ -538,9 +526,7 @@ require([
         var _date_ = new Date(value + 86400000).getFullYear() + "-" + (new Date(value + 86400000).getMonth() + 1) + "-" + new Date(value + 86400000).getDate()
 
         layer.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'";
-        // layerview.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'";
-        layer.renderer = renderer;
-
+        // layer.renderer = renderer;
 
     }
 
