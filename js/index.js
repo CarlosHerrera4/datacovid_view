@@ -153,12 +153,26 @@ require([
         ]
     }
 
+    var url = new URL(window.location.href);
+    if (url.search != "") {
+        if (url.searchParams.get("ccaa") != null) {
+            var ccaa = url.searchParams.get("ccaa");
+            var _ccaa = " AND CCAA = " + ccaa
+        }
+        else {
+            var _ccaa = ""
+        }
+    }
+    else {
+        var _ccaa = ""
+    }
+
     var layer = new FeatureLayer({
         portalItem: {
             // id: "2900a255ae0f47779bf9b2036e9d0d87"
             id: "9ec5c536afd643459e5bf40c71124a03"
         },
-        definitionExpression: "Fecha >= DATE " + _yesterday + " AND Fecha <= DATE " + _today + "",
+        definitionExpression: "Fecha >= DATE " + _yesterday + " AND Fecha <= DATE " + _today + _ccaa + "",
         title: "Cifras afectados COVID-19 por provincia",
         outFields: ["*"],
         visible: true,
@@ -166,6 +180,8 @@ require([
         renderer: renderer,
         popupEnabled: false,
     });
+
+    // layer.queryExtent
 
     var map = new Map({
         basemap: {
@@ -284,6 +300,14 @@ require([
     // When the layerview is available, setup hovering interactivity
     // view.whenLayerView(layer).then(setupHoverTooltip);
     view.whenLayerView(layer).then(lang.hitch(this, function (layerview) {
+        var _query = {
+            spatialRelationship: "intersects",
+            where: layerview.layer.definitionExpression,
+            returnQueryGeometry: true
+        }
+        layerview.layer.queryExtent(_query).then(lang.hitch(this, function(evt) {
+            view.extent = evt.extent
+        }))
         // view.when(lang.hitch(this, function (evt) {
         var query = {
             outFields: ["*"],
@@ -525,7 +549,7 @@ require([
         var _date = new Date(value).getFullYear() + "-" + (new Date(value).getMonth() + 1) + "-" + new Date(value).getDate();
         var _date_ = new Date(value + 86400000).getFullYear() + "-" + (new Date(value + 86400000).getMonth() + 1) + "-" + new Date(value + 86400000).getDate()
 
-        layer.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'";
+        layer.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'" + _ccaa;
         // layer.renderer = renderer;
 
     }
