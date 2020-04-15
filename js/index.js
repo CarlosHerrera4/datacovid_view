@@ -404,6 +404,8 @@ require([
                 if (chart != undefined) {
                     chart.data.datasets[0].data = [];
                     chart.data.datasets[1].data = [];
+                    chart.data.datasets[2].data = [];
+
                     chart.update();
                 }
                 return hitTest(event).then(
