@@ -3,6 +3,7 @@ require([
     "dojo/_base/lang",
     'dojo/_base/array',
     "esri/Map",
+    "esri/WebMap",
     "esri/request",
     "esri/layers/support/LabelClass",
     "esri/layers/FeatureLayer",
@@ -17,6 +18,7 @@ require([
     lang,
     array,
     Map,
+    WebMap,
     esriRequest,
     LabelClass,
     FeatureLayer,
@@ -44,28 +46,123 @@ require([
         // autocasts as new LabelClass()
         symbol: {
             type: "text",  // autocasts as new TextSymbol()
-            color: "green",
-            font: {  // autocast as new Font()
-                family: "Playfair Display",
-                size: 12,
-                weight: "bold"
+            color: [
+                51,
+                51,
+                51,
+                255
+            ],
+            haloSize: 0.75,
+            haloColor: [
+                255,
+                255,
+                255,
+                255
+            ],
+            font: {
+                size: 9.75,
+                style: "normal",
+                decoration: "none",
+                weight: "bold",
+                family: "Arial"
             }
         },
-        labelPlacement: "above-center",
+        labelPlacement: "always-horizontal",
         labelExpressionInfo: {
-            expression: "$feature.cases_per_cienmil"
+            expression: "$feature.CasosConfirmados"
         }
     };
 
+    var defaultSym = {
+        type: "simple-fill", // autocasts as new SimpleFillSymbol()
+        outline: {
+            // autocasts as new SimpleLineSymbol()
+            color: [194,
+                194,
+                194,
+                64],
+            width: "0.5px"
+        }
+    };
+
+    var renderer = {
+        type: "simple", // autocasts as new SimpleRenderer()
+        symbol: defaultSym,
+        label: "Afectados por coronavirus",
+        visualVariables: [
+            {
+                type: "color",
+                field: "CasosConfirmados",
+                stops: [
+                    {
+                        "value": 34,
+                        "color": [
+                            255,
+                            252,
+                            212,
+                            255
+                        ],
+                        "label": "< 34"
+                    },
+                    {
+                        "value": 1304.5,
+                        "color": [
+                            177,
+                            205,
+                            194,
+                            255
+                        ],
+                        "label": null
+                    },
+                    {
+                        "value": 2575,
+                        "color": [
+                            98,
+                            158,
+                            176,
+                            255
+                        ],
+                        "label": "2.575"
+                    },
+                    {
+                        "value": 3845.5,
+                        "color": [
+                            56,
+                            98,
+                            122,
+                            255
+                        ],
+                        "label": null
+                    },
+                    {
+                        "value": 5116,
+                        "color": [
+                            13,
+                            38,
+                            68,
+                            255
+                        ],
+                        "label": "> 5.116"
+                    }
+                ]
+            }
+        ]
+    }
+
     var layer = new FeatureLayer({
         portalItem: {
-            id: "2900a255ae0f47779bf9b2036e9d0d87"
+            // id: "2900a255ae0f47779bf9b2036e9d0d87"
+            id: "9ec5c536afd643459e5bf40c71124a03"
         },
-        definitionExpression: "date >= DATE '2020-3-20' AND date <= DATE '2020-3-21'",
-        title: "Cifras afectados. COVID-19  (casos por 100.000 habitantes)",
+        // url: "https://services7.arcgis.com/lTrEzFGSU2ayogtj/ArcGIS/rest/services/COMPLETA_Afectados_por_coronavirus_por_provincia_en_Espa%C3%B1a_Vista_Solo_lectura/FeatureServer/0",
+        // url: "https://services7.arcgis.com/lTrEzFGSU2ayogtj/arcgis/rest/services/[COMPLETA]_Afectados_por_coronavirus_por_provincia_en_Espa%C3%B1a_historico/FeatureServer/0",
+        // definitionExpression: "Fecha >= DATE '2020-3-20' AND Fecha <= DATE '2020-3-21'",
+        title: "Cifras afectados COVID-19 por provincia",
         outFields: ["*"],
+        visible: true,
         labelingInfo: [labelClass],
-        popupEnabled: false
+        renderer: renderer,
+        popupEnabled: false,
     });
 
     var map = new Map({
@@ -76,6 +173,14 @@ require([
         },
         layers: [layer]
     });
+
+
+    // var map = new WebMap({
+    //     portalItem: {
+    //         id: "02ef9624f4ee403d8f4c723fcf8c1bbf"
+    //     }
+    //     // layers: [layer]
+    // });
 
     var view = new MapView({
         map: map,
@@ -109,8 +214,9 @@ require([
         container: "slider",
         max: today.getTime(),
         // max: 1586131200000,
-        min: 1582502400000,
-        values: [1582502400000],
+        // min: 1582502400000,
+        min: 1585519200000,  // 30  marzo
+        values: [1585519200000],
         step: 2678400000,
         rangeLabelsVisible: true,
         visibleElements: {
@@ -121,7 +227,6 @@ require([
     });
 
     slider.labelFormatFunction = function (value, type) {
-        // return new Date(value).toLocaleDateString()
         return new Date(value).getDate() + " de " + getMonth(value)
     }
 
@@ -180,21 +285,25 @@ require([
     var historicData = new Expand({
         content: charts
     });
-    view.ui.add( historicData, "bottom-right");
-
+    view.ui.add(historicData, "bottom-right");
 
 
 
     // When the layerview is available, setup hovering interactivity
     // view.whenLayerView(layer).then(setupHoverTooltip);
     view.whenLayerView(layer).then(lang.hitch(this, function (layerview) {
+        // view.when(lang.hitch(this, function (evt) {
         var query = {
             outFields: ["*"],
             returnGeometry: false,
             spatialRelationship: "intersects",
             where: "1=1"
         };
+
+
         layerview.layer.queryFeatures(query).then(lang.hitch(this, function (result) {
+        // layerview.queryFeatures(query).then(lang.hitch(this, function (result) {
+
             this.result = result;
         }));
 
@@ -207,6 +316,8 @@ require([
                 return view.hitTest(event).then(function (hit) {
                     var results = hit.results.filter(function (result) {
                         return result.graphic.layer === layer;
+                        // return result.graphic.layer === layerview;
+
                     });
 
                     if (!results.length) {
@@ -253,32 +364,29 @@ require([
                                 //     // "Built in " + graphic.getAttribute("CNSTRCT_YR")
                                 //     // "Fecha: " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "<br><br>" +
 
-                                "<b>" + graphic.getAttribute("province") + ".  " + new Date(graphic.getAttribute("date")).toLocaleDateString() + "</b><br><br>" +
+                                "<b>" + graphic.getAttribute("Texto") + "  (" + graphic.getAttribute("NombreCCAA") + ")  " + new Date(graphic.getAttribute("Fecha")).toLocaleDateString() + "</b><br><br>" +
                                 "<table>" +
                                 "<tr>" +
-                                "<td>Nuevos casos: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("new_cases")) + "</b></td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>Recuperados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("recovered")) + "</b></td>" +
+                                "<td>Casos confirmados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("CasosConfirmados")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Hospitalizados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("hospitalized")) + "</b></td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("Hospitalizados")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Recuperados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("Recuperados")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Fallecimientos: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("Fallecidos")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Casos en UCI: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("intensive_care")) + "</b></td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("UCI")) + "</b></td>" +
                                 "</tr>" +
-                                "<tr>" +
-                                "<td>Casos por 100.000 hab: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("cases_per_cienmil")) + "</b></td>" +
-                                "</tr>" +
-                                "<tr>" +
-                                "<td>Casos acumulados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("cases_accumulated")) + "</b></td>" +
-                                "</tr>" +
+
                                 "</table>" +
                                 "<br><br><i>Clic para ver histórico</i>"
                             );
@@ -306,19 +414,21 @@ require([
                             var graphic = hit.graphic;
 
                             var _arrayFilter = array.filter(this.result.features, function (item) {
-                                return (item.attributes.province == graphic.attributes.province && item.attributes.date <= graphic.attributes.date)
+                                return (item.attributes.CodigoProv == graphic.attributes.CodigoProv && item.attributes.Fecha <= graphic.attributes.Fecha)
                             });
                             var arrayFilter = _arrayFilter.sort(function (a, b) {
-                                return a.attributes.date - b.attributes.date
+                                return a.attributes.Fecha - b.attributes.Fecha
                             })
 
-                            var arrayCasesAccumulated = [];
-                            var arrayNewCases = [];
+                            var arrayConfirmedCases = [];
+                            var arrayRecovered = [];
+                            var arrayDeceased = [];
                             var arrayDates = [];
                             for (i = 0; i < arrayFilter.length; i++) {
-                                arrayCasesAccumulated.push(arrayFilter[i].attributes.cases_accumulated)
-                                arrayNewCases.push(arrayFilter[i].attributes.new_cases)
-                                arrayDates.push(new Date(arrayFilter[i].attributes.date).toLocaleDateString())
+                                arrayConfirmedCases.push(arrayFilter[i].attributes.CasosConfirmados)
+                                arrayRecovered.push(arrayFilter[i].attributes.Recuperados)
+                                arrayDeceased.push(arrayFilter[i].attributes.Fallecidos)
+                                arrayDates.push(new Date(arrayFilter[i].attributes.Fecha).toLocaleDateString())
                             }
 
                             var config = {
@@ -326,25 +436,33 @@ require([
                                 data: {
                                     labels: arrayDates,
                                     datasets: [{
-                                        label: 'Casos acumulados',
+                                        label: 'Casos confirmados',
                                         fill: false,
                                         backgroundColor: "blue",
                                         borderColor: "blue",
-                                        data: arrayCasesAccumulated
+                                        data: arrayConfirmedCases
                                     },
                                     {
-                                        label: 'Nuevos casos',
+                                        label: 'Recuperados',
+                                        backgroundColor: "green",
+                                        borderColor: "green",
+                                        data: arrayRecovered,
+                                        fill: false,
+                                    },
+                                    {
+                                        label: 'Fallecidos',
                                         backgroundColor: "red",
                                         borderColor: "red",
-                                        data: arrayNewCases,
+                                        data: arrayDeceased,
                                         fill: true,
-                                    }]
+                                    }
+                                    ]
                                 },
                                 options: {
                                     responsive: true,
                                     title: {
                                         display: true,
-                                        text: graphic.getAttribute('province')
+                                        text: graphic.getAttribute('Texto')
                                     },
                                     tooltips: {
                                         mode: 'index',
@@ -384,8 +502,8 @@ require([
     }));
 
 
-    // Set to 20 March
-    setYear(1584658800000);
+    // Set to day before the last
+    setYear(today.getTime() - 86400000);
 
     view.popup = {
         dockEnabled: true,
@@ -417,7 +535,9 @@ require([
         var _date = new Date(value).getFullYear() + "-" + (new Date(value).getMonth() + 1) + "-" + new Date(value).getDate();
         var _date_ = new Date(value + 86400000).getFullYear() + "-" + (new Date(value + 86400000).getMonth() + 1) + "-" + new Date(value + 86400000).getDate()
 
-        layer.definitionExpression = "date >= DATE '" + _date + "' AND date < DATE '" + _date_ + "'";
+        layer.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'";
+        // layerview.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'";
+        layer.renderer = renderer;
 
 
     }
@@ -469,10 +589,13 @@ require([
                 return;
             }
 
-            // value += 86400000;
-            value += 86400000 / 4;
-            if (value > 1586131200000) {
-                value = 1582502400000;
+            value += 86400000;
+            // value += 86400000 / 4;
+            // if (value > 1586131200000) {
+            //     value = 1582502400000;
+            // }
+            if (value > today.getTime()) {
+                value = 1585519200000;
             }
 
             setYear(value);
@@ -480,11 +603,12 @@ require([
             // Update at 30fps
             setTimeout(function () {
                 requestAnimationFrame(frame);
-            }, 700);
+            }, 1700);
         };
 
         frame();
         layer.refresh();
+        // layerview.refresh()
 
         return {
             remove: function () {
