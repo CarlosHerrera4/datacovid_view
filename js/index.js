@@ -5,6 +5,7 @@ require([
     "esri/Map",
     "esri/WebMap",
     "esri/request",
+    "esri/geometry/Extent",
     "esri/layers/support/LabelClass",
     "esri/layers/FeatureLayer",
     "esri/views/MapView",
@@ -20,6 +21,7 @@ require([
     Map,
     WebMap,
     esriRequest,
+    Extent,
     LabelClass,
     FeatureLayer,
     MapView,
@@ -196,8 +198,9 @@ require([
         map: map,
         container: "viewDiv",
         center: [-4, 40.727724],
-        zoom: 5,
+        zoom: window.screen.availHeight < 800 ? 3 : 5,
         constraints: {
+            minZoom: window.screen.availHeight < 800 ? 3 : 5,
             snapToZoom: false
         },
         // This ensures that when going fullscreen
@@ -206,6 +209,10 @@ require([
         // of the view's container
         resizeAlign: "top-left"
     });
+
+    // view.when(function () {
+    //     limitMapExtent(view)
+    // })
 
     //--------------------------------------------------------------------------
     //
@@ -274,7 +281,6 @@ require([
         "top-right"
     );
 
-
     view.ui.add(
         new Expand({
             content: new Legend({
@@ -283,8 +289,9 @@ require([
                     type: "classic"
                 },
             }),
+            id: "legendExpand",
             view: view,
-            expanded: true
+            expanded: view.width < 600 ? false : true
         }),
         "bottom-left"
     );
@@ -296,16 +303,44 @@ require([
     view.ui.add(historicData, "bottom-right");
 
 
+    view.watch("width", lang.hitch(this, function (newVal) {
+        if (newVal <= 600) {
+            // clear the view's default UI components if
+            // app is used on a small device
+            view.ui.components = ["attribution"];
+            if (view.ui.find("legendExpand").expanded == true) {
+                view.ui.find("legendExpand").collapse();
+            }
+        } 
+        else {
+            view.ui.find("legendExpand").expand()
+            view.ui.components = ["attribution", "navigation-toggle", "compass", "zoom"];
+
+        }
+    }));
+
+    view.watch("height", lang.hitch(this, function (newVal) {
+        if (newVal <= 750) {
+            view.constraints.minZoom = 3
+        }
+        else {
+            view.constraints.minZoom = 5
+        }
+    }))
+
+    view.when(function () {
+        limitMapExtent(view);
+    });
 
     // When the layerview is available, setup hovering interactivity
-    // view.whenLayerView(layer).then(setupHoverTooltip);
     view.whenLayerView(layer).then(lang.hitch(this, function (layerview) {
+        view.extent = layerview.layer.fullExtent;
         var _query = {
             spatialRelationship: "intersects",
             where: layerview.layer.definitionExpression,
             returnQueryGeometry: true
         }
-        layerview.layer.queryExtent(_query).then(lang.hitch(this, function(evt) {
+        layerview.layer.queryExtent(_query).then(lang.hitch(this, function (evt) {
             view.extent = evt.extent
         }))
         // view.when(lang.hitch(this, function (evt) {
@@ -534,6 +569,43 @@ require([
     //  Methods
     //
     //--------------------------------------------------------------------------
+
+    /**
+     * Limit map navigation
+     */
+    function limitMapExtent(view) {
+        var initialExtent = view.extent;
+        view.watch('stationary', function (event) {
+            if (!event) {
+                return;
+            }
+            //If the map has moved to the point where it's center is
+            //outside the initial boundaries, then move it back to the
+            //edge where it moved out
+            var currentCenter = view.extent.center;
+            if (!initialExtent.contains(currentCenter)) {
+
+                var newCenter = view.extent.center;
+
+                //check each side of the initial extent and if the
+                //current center is outside that extent,
+                //set the new center to be on the edge that it went out on
+                if (currentCenter.x < initialExtent.xmin) {
+                    newCenter.x = initialExtent.xmin;
+                }
+                if (currentCenter.x > initialExtent.xmax) {
+                    newCenter.x = initialExtent.xmax;
+                }
+                if (currentCenter.y < initialExtent.ymin) {
+                    newCenter.y = initialExtent.ymin;
+                }
+                if (currentCenter.y > initialExtent.ymax) {
+                    newCenter.y = initialExtent.ymax;
+                }
+                view.goTo(newCenter);
+            }
+        });
+    }
 
     /**
      * Sets the current visualized construction year.

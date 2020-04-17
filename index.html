@@ -79,13 +79,38 @@
             overflow-x: hidden;
         }
 
-        .dateContainer {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            align-items: center;
-            height: 100%;
+        @media only screen and (max-width: 2000px) {
+
+            .dateContainer {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                align-items: center;
+                height: 100%;
+            }
         }
+
+        @media only screen and (max-width: 600px) {
+            .dateContainer {
+                display: none;
+            }
+        }
+
+        @media only screen and (max-width: 2000px) {
+            #titleDiv {
+                font-weight: 400;
+                font-style: normal;
+                font-size: 1.2019rem;
+                padding: 10px;
+            }
+        }
+
+        @media only screen and (max-width: 600px) {
+            #titleDiv {
+                display: none;
+            }
+        }
+
 
         #sliderInnerContainer {
             flex: 1 1 auto;
