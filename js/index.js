@@ -75,7 +75,7 @@ require([
         },
         labelPlacement: "always-horizontal",
         labelExpressionInfo: {
-            expression: "$feature.CasosConfirmados"
+            expression: "Round( ($feature.CasosConfirmados * 100000) / $feature.Habitantes )"
         }
     };
 
@@ -94,24 +94,25 @@ require([
     var renderer = {
         type: "simple", // autocasts as new SimpleRenderer()
         symbol: defaultSym,
-        label: "Afectados por coronavirus",
+        label: "Afectados por cada 100.000 habitantes",
         visualVariables: [
             {
                 type: "color",
-                field: "CasosConfirmados",
+                // field: "CasosConfirmados",
+                valueExpression: "($feature.CasosConfirmados * 100000) / $feature.Habitantes",
                 stops: [
                     {
-                        "value": 34,
+                        "value": 30,
                         "color": [
                             255,
                             252,
                             212,
                             255
                         ],
-                        "label": "< 34"
+                        "label": "< 30"
                     },
                     {
-                        "value": 1304.5,
+                        "value": 133.5,
                         "color": [
                             177,
                             205,
@@ -121,17 +122,17 @@ require([
                         "label": null
                     },
                     {
-                        "value": 2575,
+                        "value": 297,
                         "color": [
                             98,
                             158,
                             176,
                             255
                         ],
-                        "label": "2.575"
+                        "label": "297"
                     },
                     {
-                        "value": 3845.5,
+                        "value": 431.5,
                         "color": [
                             56,
                             98,
@@ -141,14 +142,14 @@ require([
                         "label": null
                     },
                     {
-                        "value": 5116,
+                        "value": 566,
                         "color": [
                             13,
                             38,
                             68,
                             255
                         ],
-                        "label": "> 5.116"
+                        "label": "> 566"
                     }
                 ]
             }
