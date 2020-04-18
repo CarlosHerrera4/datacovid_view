@@ -432,6 +432,9 @@ require([
                                 "<td>Casos en UCI: </td>" +
                                 "<td><b>" + isNegative(graphic.getAttribute("UCI")) + "</b></td>" +
                                 "</tr>" +
+                                "<td>Tipo de fuente: </td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("TipoFuente")) + "</b></td>" +
+                                "</tr>" +
 
                                 "</table>" +
                                 "<br><br><i>Clic para ver histórico</i>"
@@ -638,6 +641,15 @@ require([
         }
     }
 
+    function isNull(value) {
+        if (value == null) {
+            return ""
+        }
+        else {
+            return value
+        }
+    }
+
     /**
      * Starts the animation that cycle
      * through the construction years.
@@ -725,6 +737,7 @@ require([
 
         // move the tooltip progressively
         function move() {
+        
             x += (targetX - x) * 0.1;
             y += (targetY - y) * 0.1;
 
