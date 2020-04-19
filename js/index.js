@@ -198,7 +198,7 @@ require([
     var view = new MapView({
         map: map,
         container: "viewDiv",
-        center: [-4, 40.727724],
+        center: [-6, 33],
         zoom: window.screen.availHeight < 800 ? 3 : 5,
         constraints: {
             minZoom: window.screen.availHeight < 800 ? 3 : 5,
@@ -211,9 +211,23 @@ require([
         resizeAlign: "top-left"
     });
 
-    // view.when(function () {
-    //     limitMapExtent(view)
-    // })
+    var view2 = new MapView({
+        map: map,
+        container: "islandDiv",
+        center: [-15.90309972564007, 28.477520596071557],
+        zoom: 5,
+        constraints: {
+            minZoom: 3,
+            snapToZoom: false
+        },
+        // This ensures that when going fullscreen
+        // The top left corner of the view extent
+        // stays aligned with the top left corner
+        // of the view's container
+        // resizeAlign: "top-left"
+    });
+    view2.ui.components = [];
+    view.ui.add("islandDiv", "bottom-left")
 
     //--------------------------------------------------------------------------
     //
@@ -294,7 +308,7 @@ require([
             view: view,
             expanded: view.width < 600 ? false : true
         }),
-        "bottom-left"
+        "top-left"
     );
 
     // view.ui.add([charts], "bottom-right");
@@ -312,7 +326,7 @@ require([
             if (view.ui.find("legendExpand").expanded == true) {
                 view.ui.find("legendExpand").collapse();
             }
-        } 
+        }
         else {
             view.ui.find("legendExpand").expand()
             view.ui.components = ["attribution", "navigation-toggle", "compass", "zoom"];
@@ -331,20 +345,21 @@ require([
 
     view.when(function () {
         limitMapExtent(view);
+        view.goTo({
+            center: [-6, 40],
+            zoom: 5
+        })
     });
 
     // When the layerview is available, setup hovering interactivity
     view.whenLayerView(layer).then(lang.hitch(this, function (layerview) {
-        view.extent = layerview.layer.fullExtent;
+        // view.extent = layerview.layer.fullExtent;
         var _query = {
             spatialRelationship: "intersects",
             where: layerview.layer.definitionExpression,
             returnQueryGeometry: true
         }
-        layerview.layer.queryExtent(_query).then(lang.hitch(this, function (evt) {
-            view.extent = evt.extent
-        }))
-        // view.when(lang.hitch(this, function (evt) {
+
         var query = {
             outFields: ["*"],
             returnGeometry: false,
@@ -364,6 +379,24 @@ require([
 
             var hitTest = promiseUtils.debounce(function (event) {
                 return view.hitTest(event).then(function (hit) {
+                    var results = hit.results.filter(function (result) {
+                        return result.graphic.layer === layer;
+
+                    });
+
+                    if (!results.length) {
+                        return null;
+                    }
+
+                    return {
+                        graphic: results[0].graphic,
+                        screenPoint: hit.screenPoint
+                    };
+                });
+            });
+
+            var hitTest2 = promiseUtils.debounce(function (event) {
+                return view2.hitTest(event).then(function (hit) {
                     var results = hit.results.filter(function (result) {
                         return result.graphic.layer === layer;
 
@@ -405,6 +438,77 @@ require([
 
                             var graphic = hit.graphic;
                             var screenPoint = hit.screenPoint;
+
+                            highlight = layerview.highlight(graphic);
+
+                            tooltip.show(
+                                screenPoint,
+
+                                "<b>" + graphic.getAttribute("Texto") + "  (" + graphic.getAttribute("NombreCCAA") + ")  " + new Date(graphic.getAttribute("Fecha")).toLocaleDateString() + "</b><br><br>" +
+                                "<table>" +
+                                "<tr>" +
+                                "<td>Casos confirmados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("CasosConfirmados")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Hospitalizados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("Hospitalizados")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Recuperados: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("Recuperados")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Fallecimientos: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("Fallecidos")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Casos en UCI: </td>" +
+                                "<td><b>" + isNegative(graphic.getAttribute("UCI")) + "</b></td>" +
+                                "</tr>" +
+                                "<td>Tipo de fuente: </td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("TipoFuente")) + "</b></td>" +
+                                "</tr>" +
+
+                                "</table>" +
+                                "<br><br><i>Clic para ver histórico</i>"
+                            );
+
+                        } else {
+                            tooltip.hide();
+                            // view.popup.close()
+                        }
+                    },
+                    function () { }
+                );
+            });
+
+            view2.on("pointer-move", function (event) {
+                return hitTest2(event).then(
+                    function (hit) {
+                        // remove current highlighted feature
+                        if (highlight) {
+                            highlight.remove();
+                            highlight = null;
+                        }
+
+                        // highlight the hovered feature
+                        // or hide the tooltip
+                        if (hit) {
+                            // Query for chart
+                            // var query = {
+                            //     outFields: ["*"],
+                            //     returnGeometry: false,
+                            //     spatialRelationship: "intersects",
+                            //     where: "ine_code = " + hit.graphic.attributes.ine_code
+                            // };
+                            // layerview.layer.queryFeatures(query).then(lang.hitch(this, function (result) {
+                            //     debugger
+                            // }))
+
+                            var graphic = hit.graphic;
+                            var screenPoint = hit.screenPoint;
+                            screenPoint.y = screenPoint.y + 500
 
                             highlight = layerview.highlight(graphic);
 
@@ -550,13 +654,116 @@ require([
                     }
                 )
             })
+
+            view2.on("click", function (event) {
+                // Refresh data of 3 variables
+                if (chart != undefined) {
+                    chart.data.datasets[0].data = [];
+                    chart.data.datasets[1].data = [];
+                    chart.data.datasets[2].data = [];
+
+                    chart.update();
+                }
+                return hitTest2(event).then(
+                    function (hit) {
+                        if (hit) {
+                            historicData.expand();
+
+                            var graphic = hit.graphic;
+
+                            var _arrayFilter = array.filter(this.result.features, function (item) {
+                                return (item.attributes.CodigoProv == graphic.attributes.CodigoProv && item.attributes.Fecha <= graphic.attributes.Fecha)
+                            });
+                            var arrayFilter = _arrayFilter.sort(function (a, b) {
+                                return a.attributes.Fecha - b.attributes.Fecha
+                            })
+
+                            var arrayConfirmedCases = [];
+                            var arrayRecovered = [];
+                            var arrayDeceased = [];
+                            var arrayDates = [];
+                            for (i = 0; i < arrayFilter.length; i++) {
+                                arrayConfirmedCases.push(arrayFilter[i].attributes.CasosConfirmados)
+                                arrayRecovered.push(arrayFilter[i].attributes.Recuperados)
+                                arrayDeceased.push(arrayFilter[i].attributes.Fallecidos)
+                                arrayDates.push(new Date(arrayFilter[i].attributes.Fecha).toLocaleDateString())
+                            }
+
+                            var config = {
+                                type: 'line',
+                                data: {
+                                    labels: arrayDates,
+                                    datasets: [{
+                                        label: 'Casos confirmados',
+                                        fill: false,
+                                        backgroundColor: "blue",
+                                        borderColor: "blue",
+                                        data: arrayConfirmedCases
+                                    },
+                                    {
+                                        label: 'Recuperados',
+                                        backgroundColor: "green",
+                                        borderColor: "green",
+                                        data: arrayRecovered,
+                                        fill: false,
+                                    },
+                                    {
+                                        label: 'Fallecidos',
+                                        backgroundColor: "red",
+                                        borderColor: "red",
+                                        data: arrayDeceased,
+                                        fill: true,
+                                    }
+                                    ]
+                                },
+                                options: {
+                                    responsive: true,
+                                    title: {
+                                        display: true,
+                                        text: graphic.getAttribute('Texto')
+                                    },
+                                    tooltips: {
+                                        mode: 'index',
+                                        intersect: false,
+                                    },
+                                    hover: {
+                                        mode: 'nearest',
+                                        intersect: true
+                                    },
+                                    scales: {
+                                        xAxes: [{
+                                            display: true,
+                                            scaleLabel: {
+                                                display: false,
+                                                labelString: 'Mes'
+                                            }
+                                        }],
+                                        yAxes: [{
+                                            display: true,
+                                            scaleLabel: {
+                                                display: true,
+                                                labelString: 'Casos'
+                                            }
+                                        }]
+                                    }
+                                }
+                            };
+
+                            chart = new Chart(document.getElementById('resultCanvas').getContext("2d"), config)
+
+                        }
+                    }
+                )
+            })
         }
-        setupHoverTooltip(layerview)
+        setupHoverTooltip(layerview);
+
     }));
 
 
     // Set to day before the last
     setYear(today.getTime() - 86400000);
+
 
     view.popup = {
         dockEnabled: true,
@@ -738,7 +945,7 @@ require([
 
         // move the tooltip progressively
         function move() {
-        
+
             x += (targetX - x) * 0.1;
             y += (targetY - y) * 0.1;
 

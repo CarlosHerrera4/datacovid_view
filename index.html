@@ -178,6 +178,16 @@
             box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.75);
             transform: translate3d(-50%, -125%, 0);
         }
+
+        #islandDiv {
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        @media only screen and (max-width: 900px) {
+            #islandDiv {
+                display: none;
+            }
+        }
     </style>
 </head>
 
@@ -186,6 +196,8 @@
         <div id="viewDiv">
             <div id="titleDiv" class="esri-widget">Cifras afectados COVID-19</div>
         </div>
+        <div id="islandDiv" class="esri-widget" style="height: 300px; width: 300px;"></div>
+
         <div id="charts" class="esri-widget">
             <div class="charts">
                 <div>
