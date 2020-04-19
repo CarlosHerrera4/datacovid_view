@@ -344,7 +344,7 @@ require([
     }))
 
     view.when(function () {
-        limitMapExtent(view);
+        // limitMapExtent(view);
         view.goTo({
             center: [-6, 40],
             zoom: 5
