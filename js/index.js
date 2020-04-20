@@ -198,7 +198,7 @@ require([
     var view = new MapView({
         map: map,
         container: "viewDiv",
-        center: [-6, 33],
+        center: [-6, 40],
         zoom: window.screen.availHeight < 800 ? 3 : 5,
         constraints: {
             minZoom: window.screen.availHeight < 800 ? 3 : 5,
@@ -343,22 +343,21 @@ require([
         }
     }))
 
-    view.when(function () {
-        // limitMapExtent(view);
-        view.goTo({
-            center: [-6, 40],
-            zoom: 5
-        })
-    });
-
     // When the layerview is available, setup hovering interactivity
     view.whenLayerView(layer).then(lang.hitch(this, function (layerview) {
-        // view.extent = layerview.layer.fullExtent;
+        // Si hay parámetro de CCAA, cambiamos extent
         var _query = {
             spatialRelationship: "intersects",
-            where: layerview.layer.definitionExpression,
+            where: "CCAA = " + ccaa,
             returnQueryGeometry: true
         }
+        if (ccaa && ccaa != undefined) {
+            layerview.layer.queryExtent(_query).then(lang.hitch(this, function (evt) {
+                view.extent = evt.extent
+            }))
+            document.getElementById('islandDiv').style.display = "none";
+        }
+        //
 
         var query = {
             outFields: ["*"],
