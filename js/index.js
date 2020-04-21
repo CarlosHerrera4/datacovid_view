@@ -41,11 +41,16 @@ require([
     var chart;
 
     // Get date
-    var today = new Date();
-    var _today = "'" + today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate();
+    // var today = new Date();
+    // var _today = "'" + today.getFullYear() + "-" + (today.getMonth() + 1) + "-" + today.getDate() + " 00:00:00'";
 
-    var yesterday = new Date();
-    var _yesterday = "'" + yesterday.getFullYear() + "-" + (yesterday.getMonth() + 1) + "-" + yesterday.getDate();
+    // var yesterday = new Date();
+    // var _yesterday = "'" + yesterday.getFullYear() + "-" + (yesterday.getMonth() + 1) + "-" + (yesterday.getDate() - 1 + " 00:00:00'");
+        var today = new Date(new Date().setHours(0, 0, 0, 0));
+        var yesterday = new Date(new Date().setHours(-24, 0, 0, 0));
+
+    var _today = new Date(new Date().setHours(0, 0, 0, 0));
+    var _yesterday = new Date(new Date().setHours(-24, 0, 0, 0));
 
 
     var labelClass = {
@@ -175,7 +180,9 @@ require([
             // id: "2900a255ae0f47779bf9b2036e9d0d87"
             id: "9ec5c536afd643459e5bf40c71124a03"
         },
-        definitionExpression: "Fecha >= DATE " + _yesterday + " AND Fecha <= DATE " + _today + _ccaa + "",
+        // definitionExpression: "Fecha >= DATE " + _yesterday + " AND Fecha <= DATE " + _today + _ccaa + "",
+        definitionExpression: "HoraActualizacion >= DATE " + _yesterday + " AND HoraActualizacion <= DATE " + _today + _ccaa + "",
+
         title: "Cifras afectados COVID-19 por provincia",
         outFields: ["*"],
         visible: true,
@@ -831,7 +838,9 @@ require([
         var _date = new Date(value).getFullYear() + "-" + (new Date(value).getMonth() + 1) + "-" + new Date(value).getDate();
         var _date_ = new Date(value + 86400000).getFullYear() + "-" + (new Date(value + 86400000).getMonth() + 1) + "-" + new Date(value + 86400000).getDate()
 
-        layer.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'" + _ccaa;
+        // layer.definitionExpression = "Fecha >= DATE '" + _date + "' AND Fecha < DATE '" + _date_ + "'" + _ccaa;
+        layer.definitionExpression = "HoraActualizacion >= DATE '" + _date + "' AND HoraActualizacion <= DATE '" + _date_ + "'" + _ccaa;
+
         // layer.renderer = renderer;
 
     }
