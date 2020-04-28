@@ -859,7 +859,7 @@ require([
 
     function isNull(value) {
         if (value == null) {
-            return ""
+            return "Sin datos"
         }
         else {
             return value
