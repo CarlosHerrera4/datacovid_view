@@ -975,8 +975,25 @@ require([
                     y = point.y;
                 }
 
-                targetX = point.x;
-                targetY = point.y;
+                // targetX = point.x;
+                // targetY = point.y;
+
+                if (point.y  <= (window.innerHeight / 2) ) {
+                    targetY = point.y + 400
+                }
+                else {
+                    targetY = point.y;
+                }
+                if (point.x <= (window.innerHeight / 2)) {
+                    targetX = point.x + 200
+                }
+                else {
+                    targetX = point.x
+                }
+
+                console.log("X: " + point.x + "  -  innerHeight: " + window.innerHeight)
+                console.log("Y: " + point.y + "  -  innerWidth: " + window.innerWidth)
+
                 style.opacity = 1;
                 visible = true;
                 textElement.innerHTML = text;
