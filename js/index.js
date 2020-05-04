@@ -450,30 +450,42 @@ require([
                             tooltip.show(
                                 screenPoint,
 
-                                "<b>" + graphic.getAttribute("Texto") + "  (" + graphic.getAttribute("NombreCCAA") + ")  " + new Date(graphic.getAttribute("Fecha")).toLocaleDateString() + "</b><br><br>" +
+                                "<b>" + graphic.getAttribute("Texto") + "  (" + graphic.getAttribute("NombreCCAA") + ") </b><br><br>" +
                                 "<table>" +
                                 "<tr>" +
                                 "<td>Casos confirmados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("CasosConfirmados")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("CasosConfirmados")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Hospitalizados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("Hospitalizados")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("Hospitalizados")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Recuperados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("Recuperados")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("Recuperados")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Fallecimientos: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("Fallecidos")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("Fallecidos")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Casos en UCI: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("UCI")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("UCI")) + "</b></td>" +
                                 "</tr>" +
                                 "<td>Tipo de fuente: </td>" +
                                 "<td><b>" + isNull(graphic.getAttribute("TipoFuente")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Fecha del dato: </td>" +
+                                "<td><b>" + getDate(graphic.getAttribute("Fecha")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Fecha de la fuente: </td>" +
+                                "<td><b>" + getDate(graphic.getAttribute("HoraActualizacion")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Nuevos casos: </td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("NuevoCasos")) + "</b></td>" +
                                 "</tr>" +
 
                                 "</table>" +
@@ -521,30 +533,42 @@ require([
                             tooltip.show(
                                 screenPoint,
 
-                                "<b>" + graphic.getAttribute("Texto") + "  (" + graphic.getAttribute("NombreCCAA") + ")  " + new Date(graphic.getAttribute("Fecha")).toLocaleDateString() + "</b><br><br>" +
+                                "<b>" + graphic.getAttribute("Texto") + "  (" + graphic.getAttribute("NombreCCAA") + ") </b><br><br>" +
                                 "<table>" +
                                 "<tr>" +
                                 "<td>Casos confirmados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("CasosConfirmados")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("CasosConfirmados")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Hospitalizados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("Hospitalizados")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("Hospitalizados")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Recuperados: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("Recuperados")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("Recuperados")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Fallecimientos: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("Fallecidos")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("Fallecidos")) + "</b></td>" +
                                 "</tr>" +
                                 "<tr>" +
                                 "<td>Casos en UCI: </td>" +
-                                "<td><b>" + isNegative(graphic.getAttribute("UCI")) + "</b></td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("UCI")) + "</b></td>" +
                                 "</tr>" +
                                 "<td>Tipo de fuente: </td>" +
                                 "<td><b>" + isNull(graphic.getAttribute("TipoFuente")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Fecha del dato: </td>" +
+                                "<td><b>" + getDate(graphic.getAttribute("Fecha")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Fecha de la fuente: </td>" +
+                                "<td><b>" + getDate(graphic.getAttribute("HoraActualizacion")) + "</b></td>" +
+                                "</tr>" +
+                                "<tr>" +
+                                "<td>Nuevos casos: </td>" +
+                                "<td><b>" + isNull(graphic.getAttribute("NuevoCasos")) + "</b></td>" +
                                 "</tr>" +
 
                                 "</table>" +
@@ -847,6 +871,12 @@ require([
 
     /**
      */
+    function getDate(value) {
+        if (value > 0) {
+            var d = new Date(value);
+            return d.toLocaleDateString();
+        }
+    }
 
     function isNegative(value) {
         if (value == -1) {
@@ -858,7 +888,7 @@ require([
     }
 
     function isNull(value) {
-        if (value == null) {
+        if (value == null || value == 0) {
             return "Sin datos"
         }
         else {
