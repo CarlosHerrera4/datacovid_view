@@ -872,9 +872,17 @@ require([
     /**
      */
     function getDate(value) {
-        if (value > 0) {
+        if (value != undefined && value > 0) {
             var d = new Date(value);
-            return d.toLocaleDateString();
+            if (d.toLocaleDateString() != undefined) {
+                return d.toLocaleDateString();
+            }
+            else {
+                return d.toString()
+            }
+        }
+        else {
+            return ""
         }
     }
 
@@ -888,8 +896,11 @@ require([
     }
 
     function isNull(value) {
-        if (value == null || value == 0) {
+        if (value == null || value == undefined) {
             return "Sin datos"
+        }
+        else if (value == 0) {
+            return 0
         }
         else {
             return value
