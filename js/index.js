@@ -46,8 +46,8 @@ require([
 
     // var yesterday = new Date();
     // var _yesterday = "'" + yesterday.getFullYear() + "-" + (yesterday.getMonth() + 1) + "-" + (yesterday.getDate() - 1 + " 00:00:00'");
-        var today = new Date(new Date().setHours(0, 0, 0, 0));
-        var yesterday = new Date(new Date().setHours(-24, 0, 0, 0));
+    var today = new Date(new Date().setHours(0, 0, 0, 0));
+    var yesterday = new Date(new Date().setHours(-24, 0, 0, 0));
 
     var _today = new Date(new Date().setHours(0, 0, 0, 0));
     var _yesterday = new Date(new Date().setHours(-24, 0, 0, 0));
@@ -791,8 +791,11 @@ require([
     }));
 
 
-    // Set to day before the last
-    setYear(today.getTime() - 86400000);
+    // Set to day before the last     
+    // 22 de Junio   1592784000000
+    // setYear(today.getTime() - 86400000);
+    setYear(1592784000000);
+
 
 
     view.popup = {
@@ -1019,7 +1022,7 @@ require([
                 // targetX = point.x;
                 // targetY = point.y;
 
-                if (point.y  <= (window.innerHeight / 2) ) {
+                if (point.y <= (window.innerHeight / 2)) {
                     targetY = point.y + 400
                 }
                 else {
