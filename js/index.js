@@ -251,7 +251,8 @@ require([
 
     var slider = new Slider({
         container: "slider",
-        max: today.getTime(),
+        // max: today.getTime(),
+        max: 1592784000000,
         min: 1585519200000,  // 30  marzo
         values: [1585519200000],
         step: 2678400000,
@@ -950,7 +951,9 @@ require([
             // if (value > 1586131200000) {
             //     value = 1582502400000;
             // }
-            if (value > today.getTime()) {
+            // 1592784000000
+            // if (value > today.getTime()) {
+            if (value > 1592784000000) {
                 value = 1585519200000;
             }
 
